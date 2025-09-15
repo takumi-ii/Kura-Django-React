@@ -1,0 +1,180 @@
+openapi: 3.0.3
+info:
+  title: Kura App API
+  description: |
+    Kura（日記・予定・リマインダーアプリ）用の完全なAPI仕様です。
+    機能: ユーザー登録・認証（JWT, 2FA）, カレンダー・予定共有, 日記, リマインダー, 画像アップロードなど。
+  version: 1.0.0
+servers:
+  - url: https://api.kura.app/v1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+    DiaryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, complete]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: 登録成功
+  /auth/login:
+    post:
+      summary: JWT ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: トークン発行
+
+  /auth/2fa/enable:
+    post:
+      summary: 2FA有効化
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 成功
+
+  /calendar:
+    get:
+      summary: カレンダー一覧取得
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+    post:
+      summary: 新しいカレンダー作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: 作成成功
+
+  /calendar/{id}/events:
+    get:
+      summary: カレンダーのイベント取得
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        200:
+          description: OK
+
+  /diary:
+    get:
+      summary: 自分の日記一覧
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+    post:
+      summary: 新規日記作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiaryEntry'
+      responses:
+        201:
+          description: 作成成功
+
+  /reminders:
+    get:
+      summary: リマインダー一覧
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+    post:
+      summary: 新規リマインダー作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                title:
+                  type: string
+                due_date:
+                  type: string
+                  format: date
+      responses:
+        201:
+          description: 作成成功
